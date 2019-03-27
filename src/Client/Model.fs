@@ -3,31 +3,29 @@ module Toodeloo.Model
 open Elmish
 open System
 
-type TaskId = int
-
-type Todo = 
-    { taskId   : TaskId
-      priority : int
-      task     : string
-      due      : DateTime 
+type Todo = { 
+      title       : string
+      description : string 
+      priority    : int
+      due         : DateTime option
     }
 
-type Model =
-    { entries    : Map<int, Todo>
-      createForm : Todo
-      editForm   : Todo option
-      errorMsg   : string option
-      currentId  : int
-      showInfoPane : bool
+type Model = { 
+    entries    : Map<int, Todo>
+    createForm : Todo
+    editForm   : (int * Todo) option
+    errorMsg   : string option
+    currentId  : int
+    showInfoPane : bool
     }
 
 // local submodule
 module Defaults =
-    let defaultTodo = 
-        { taskId = 0
-          priority = 0
-          task = ""
-          due = DateTime.Today.AddDays 1.0
+    let defaultTodo = { 
+        title = ""
+        description = ""
+        priority = 0
+        due = None
         }
 
     let defaultModel = {
@@ -43,8 +41,9 @@ module Defaults =
 // Example how to split Msg into submessages
 type UpdateEntryMsg =
 | UpdatePri of int
-| UpdateTask of string
-| UpdateDue of System.DateTime
+| UpdateTitle of string
+| UpdateDescription of string
+| UpdateDue of System.DateTime option
 
 type NewEntryMsg = UpdateEntryMsg
 
@@ -69,23 +68,21 @@ let handleNewEntry (msg : NewEntryMsg) (model : Model) =
         match msg with
         | UpdatePri y -> { model.createForm with priority = y }
         | UpdateDue y ->  { model.createForm with due = y }
-        | UpdateTask y -> { model.createForm with task = y }
+        | UpdateTitle y -> { model.createForm with title = y }
+        | UpdateDescription y -> { model.createForm with description = y }
     { model with createForm = entry }, Cmd.none
 
 let saveEntry (x : Todo) (model : Model) =
     let newId = model.currentId + 1
     // Example validation, perform any kind of validation here and return
-    match x.taskId with
-    | 0 -> 
-        let todo' = model.entries |> Map.add newId { x with taskId = newId } 
-        let model' = { 
-            model with 
-                entries = todo' 
-                currentId = newId
-                createForm = Defaults.defaultTodo
-            }
-        model', Cmd.none
-    | _ -> model, notifyErr "What, what?"
+    let todo' = model.entries |> Map.add newId x 
+    let model' = { 
+        model with 
+            entries = todo' 
+            currentId = newId
+            createForm = Defaults.defaultTodo
+        }
+    model', Cmd.none
 
 let deleteEntry (x : int) (model : Model) =
     let model' = { model with entries = Map.remove x model.entries }
@@ -93,31 +90,32 @@ let deleteEntry (x : int) (model : Model) =
 
 let private updateEntry (msg : EditEntryMsg) (entry : Todo) =
     match msg with
-    | UpdateTask t -> { entry with task = t}
+    | UpdateTitle t -> { entry with title = t}
+    | UpdateDescription t -> { entry with description = t}
     | UpdatePri p -> { entry with priority = p}
     | UpdateDue d -> { entry with due = d}
 
 let startEdit id model =
     match Map.tryFind id model.entries with
     | Some entry -> 
-        let model' = { model with editForm = Some entry }
+        let model' = { model with editForm = Some (id, entry) }
         model', Cmd.none
     | None -> model, notifyErr <| "TaskId not found, " + string id
 
 let handleEditEntry (msg : UpdateEntryMsg) (model : Model) =
     match model.editForm with
-    | Some entry -> 
+    | Some (id, entry) -> 
         let entry' = updateEntry msg entry
-        let model' = { model with editForm = Some entry' }
+        let model' = { model with editForm = Some (id, entry') }
         model', Cmd.none
     | None -> model, notifyErr "Error in error message"
 
 let saveEdit model =
     match model.editForm with
-    Some entry -> 
+    | Some (id, entry) -> 
         let model' = {
             model with 
-                entries = Map.add entry.taskId entry model.entries
+                entries = Map.add id entry model.entries
                 editForm = None 
             }
         model', Cmd.none

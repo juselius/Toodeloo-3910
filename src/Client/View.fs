@@ -16,11 +16,18 @@ let private button txt onClick =
 let newEntryForm (model : Model) (dispatch : Msg -> unit) =
     let dispatch' = NewEntry >> dispatch
     p [] [
-        Field.div [] [ Label.label [] [ str "Task" ] ]
+        Field.div [] [ Label.label [] [ str "Title" ] ]
         Control.div [] [ Input.text [
-          Input.OnChange (fun e -> dispatch' (UpdateTask e.Value))
-          Input.Placeholder "Todo" 
-          Input.Value model.createForm.task
+          Input.OnChange (fun e -> dispatch' (UpdateTitle e.Value))
+          Input.Placeholder "Title" 
+          Input.Value model.createForm.title
+          ] 
+        ]
+        Field.div [] [ Label.label [] [ str "Description" ] ]
+        Control.div [] [ Input.text [
+          Input.OnChange (fun e -> dispatch' (UpdateDescription e.Value))
+          Input.Placeholder "" 
+          Input.Value model.createForm.description
           ] 
         ]
         Field.div [] [ Label.label [] [ str "Priority" ] ]
@@ -31,11 +38,16 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
           ] 
         ]
         Field.div [] [ Label.label [] [ str "Due" ] ]
-        Control.div [] [ Input.date [
-          Input.OnChange (fun e -> 
-            dispatch' (UpdateDue (DateTime.Parse e.Value)))
-          model.createForm.due.ToString "yyyy-MM-dd" |> Input.Value
-          ] 
+        Control.div [] [ 
+            Input.date [
+                Input.OnChange (fun e -> 
+                    dispatch' (UpdateDue (Some (DateTime.Parse e.Value))))
+                Input.Value (
+                    match model.createForm.due with
+                    | Some x -> x.ToString "yyyy-MM-dd" 
+                    | None ->  ""
+                ) 
+            ] 
         ]
         Field.div [] [ Label.label [] [ str "" ] ]
         Control.div [] [ button "Add entry" (fun _ -> 
@@ -50,9 +62,13 @@ let clickToEdit id txt (dispatch : Msg -> unit) =
     ] [ str txt ]
 
 let styleIt (t : Todo) = 
+    let d = 
+        match t.due with
+        | Some x -> x
+        | None -> DateTime.MaxValue
     let c =
         match t with
-        | _ when t.due.Date <= DateTime.Now.Date -> "fuchsia" 
+        | _ when d.Date <= DateTime.Now.Date -> "fuchsia" 
         | _ when t.priority >= 10 && t.priority < 50 -> "limegreen"
         | _ when t.priority >= 50 && t.priority < 100 -> "gold"
         | _ when t.priority >= 100  -> "crimson"
@@ -61,38 +77,44 @@ let styleIt (t : Todo) =
 
 
 let taskListView (model : Model) (dispatch : Msg -> unit) =
-    let editable id txt editor =
+    let editable curId txt editor =
         match model.editForm with
-        | Some n when n.taskId = id -> td [] editor
-        | _ -> clickToEdit id txt dispatch
-    let task t = 
-        editable t.taskId t.task [ Input.text [ 
-            Input.DefaultValue t.task
+        | Some (id, n) when id = curId -> td [] editor
+        | _ -> clickToEdit curId txt dispatch
+    let tit curId t = 
+        editable curId t.title [ Input.text [ 
+            Input.DefaultValue t.title
             Input.OnChange (fun e -> 
-                dispatch <| EditEntry (UpdateTask e.Value))
+                dispatch <| EditEntry (UpdateTitle e.Value))
         ]] 
-    let due model t = 
+    let desc curId t = 
+        editable curId t.description [ Input.text [ 
+            Input.DefaultValue t.description
+            Input.OnChange (fun e -> 
+                dispatch <| EditEntry (UpdateDescription e.Value))
+        ]] 
+    let due curId model t = 
         let duedate =
             match model.editForm with 
-            | Some x -> x.due
-            | None ->  t.due
+            | Some (_, x) -> Option.defaultValue DateTime.Now x.due
+            | None ->  Option.defaultValue DateTime.Now t.due
             |> fun x -> x.ToString "yyyy-MM-dd"
-        editable t.taskId duedate [ Input.date [ 
+        editable curId duedate [ Input.date [ 
             duedate |> Input.Value
             Input.OnChange (fun e -> 
                 dispatch <| EditEntry (
-                    UpdateDue <| System.DateTime.Parse e.Value)
+                    UpdateDue <| Some (System.DateTime.Parse e.Value))
                 )
         ]] 
-    let pri t = 
-        editable t.taskId (string t.priority) [ Input.number [ 
+    let pri curId t = 
+        editable curId (string t.priority) [ Input.number [ 
             Input.DefaultValue (string t.priority)
             Input.OnChange (fun e -> 
                 dispatch <| EditEntry (UpdatePri <| int e.Value))
        ]] 
-    let button i =
+    let button curId i =
         match model.editForm with
-        | Some n when n.taskId = i.taskId ->
+        | Some (id, n) when id = curId ->
             td [] [
                 Button.button [
                     Button.Color IsSuccess
@@ -109,23 +131,23 @@ let taskListView (model : Model) (dispatch : Msg -> unit) =
             Button.button [
                 Button.Color IsDanger
                 Button.IsOutlined
-                Button.OnClick (fun _ -> dispatch <| DeleteEntry i.taskId)
+                Button.OnClick (fun _ -> dispatch <| DeleteEntry curId)
             ] [ str "X" ]
         ]
-    let cols = [ "Id"; "Priority"; "Task"; "Due"; "" ]
+    let cols = [ "Priority"; "Title"; "Description"; "Due"; "" ]
     Table.table [] [
         thead [] [
             for i in cols do yield td [] [str i]
         ]
         tbody [] [
-            for p in model.entries do
-                let t = p.Value
+            for (id, t) in Map.toArray model.entries do
+                // let t = p.Value
                 yield tr [] [
-                    td [ styleIt t ] [ str (string t.taskId) ]
-                    pri t
-                    task t
-                    due model t 
-                    button t
+                    pri id t
+                    tit id t
+                    desc id t
+                    due id model t 
+                    button id t
                 ]
           ]
       ]
