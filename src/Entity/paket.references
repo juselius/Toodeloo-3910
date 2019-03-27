@@ -1,0 +1,5 @@
+group Entity
+  Microsoft.EntityFrameworkCore.Tools
+  Microsoft.EntityFrameworkCore.Design
+  Microsoft.EntityFrameworkCore.Relational
+  Npgsql.EntityFrameworkCore.PostgreSQL

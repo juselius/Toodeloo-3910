@@ -23,6 +23,17 @@ group Client
     nuget Fulma
     nuget Fable.FontAwesome.Free
 
+group Entity
+    storage none
+    source https://www.nuget.org/api/v2
+    framework netcoreapp2.2
+
+    nuget Microsoft.EntityFrameworkCore.Tools
+    nuget Microsoft.EntityFrameworkCore.Design
+    nuget Microsoft.EntityFrameworkCore.Relational
+    nuget Microsoft.EntityFrameworkCore.SqlServer
+    nuget Npgsql.EntityFrameworkCore.PostgreSQL
+
 group Build
     source https://api.nuget.org/v3/index.json
     framework: netstandard2.0
