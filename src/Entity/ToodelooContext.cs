@@ -2,21 +2,22 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Entity.Entity
+namespace Toodeloo.Entity
 {
-    public partial class toodelooContext : DbContext
+    public partial class ToodelooContext : DbContext
     {
         private string connString = "";
 
-        public toodelooContext()
+        public ToodelooContext()
         {
+            this.connString = "Host=localhost;Database=toodeloo;Username=postgres;Password=postgres";
         }
 
-        public toodelooContext( string connectionString ) {
+        public ToodelooContext( string connectionString ) {
             this.connString = connectionString;
         }
 
-        public toodelooContext(DbContextOptions<toodelooContext> options)
+        public ToodelooContext(DbContextOptions<ToodelooContext> options)
             : base(options)
         {
         }
