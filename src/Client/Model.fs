@@ -2,13 +2,11 @@ module Toodeloo.Model
 
 open Elmish
 open System
-
-type Todo = { 
-      title       : string
-      description : string 
-      priority    : int
-      due         : DateTime option
-    }
+open Fable.PowerPack
+open Fable.PowerPack.Fetch
+open Fable.Core.JsInterop
+open Thoth.Json
+open Shared
 
 type Model = { 
     entries    : Map<int, Todo>
@@ -60,8 +58,23 @@ type Msg =
 | NotifyError of string
 | ClearError
 | ToggleInfoPane
+| EntrySaved of Result<Todo, Exception>
+| EntriesLoaded of Result<Todo array, Exception>
 
 let private notifyErr e = Cmd.ofMsg (Msg.NotifyError e)
+
+let private notifyExn (e : Exception) = Cmd.ofMsg (Msg.NotifyError e.Message)
+
+let initEntries model =
+    function 
+    | Ok e ->
+        let n = Array.length e
+        { model with 
+            currentId = n
+            entries = Map.ofArray (Array.zip [| 1 .. n |] e)
+        }, Cmd.none
+    | Error ex -> 
+        model, notifyExn ex 
 
 let handleNewEntry (msg : NewEntryMsg) (model : Model) =
     let entry = 
@@ -72,9 +85,27 @@ let handleNewEntry (msg : NewEntryMsg) (model : Model) =
         | UpdateDescription y -> { model.createForm with description = y }
     { model with createForm = entry }, Cmd.none
 
+let loadEntries (model : Model) =
+    let p () =
+        promise {
+            let requestPath = "/api/load" 
+            return! fetchAs<Todo array> requestPath (Decode.Auto.generateDecoder<Todo array>()) []
+        }
+    model, Cmd.ofPromise p () (Ok >> EntriesLoaded) (Error >> EntriesLoaded)
+
 let saveEntry (x : Todo) (model : Model) =
+    let p () =
+        promise {
+            let bdy = Encode.Auto.toString (4, x)
+            let props = [
+                RequestProperties.Method HttpMethod.POST
+                RequestProperties.Body !^bdy
+            ]
+            let requestPath = "/api/save" 
+            return! fetchAs<Todo> requestPath (Decode.Auto.generateDecoder<Todo>()) props
+        }
+
     let newId = model.currentId + 1
-    // Example validation, perform any kind of validation here and return
     let todo' = model.entries |> Map.add newId x 
     let model' = { 
         model with 
@@ -82,7 +113,7 @@ let saveEntry (x : Todo) (model : Model) =
             currentId = newId
             createForm = Defaults.defaultTodo
         }
-    model', Cmd.none
+    model', Cmd.ofPromise p () (Ok >> EntrySaved) (Error >> EntrySaved)
 
 let deleteEntry (x : int) (model : Model) =
     let model' = { model with entries = Map.remove x model.entries }

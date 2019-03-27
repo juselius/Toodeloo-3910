@@ -5,6 +5,7 @@ open Fable.Helpers.React
 open Fable.Helpers.React.Props
 open Fulma
 open Toodeloo.Model
+open Shared
 
 let private button txt onClick =
     Button.button [

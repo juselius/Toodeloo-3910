@@ -12,21 +12,74 @@ open Microsoft.Extensions.DependencyInjection
 open FSharp.Control.Tasks.V2
 open Giraffe
 open Shared
+open System
+open Microsoft.EntityFrameworkCore
 
-let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
+let tryGetEnv = 
+    System.Environment.GetEnvironmentVariable 
+    >> function null | "" -> None | x -> Some x
 
 let publicPath = Path.GetFullPath "../Client/public"
 
-let port = "SERVER_PORT" |> tryGetEnv |> Option.map uint16 |> Option.defaultValue 8085us
+let port = 
+    "SERVER_PORT" 
+    |> tryGetEnv 
+    |> Option.map uint16 
+    |> Option.defaultValue 8085us
 
-let getInitCounter () : Task<Counter> = task { return { Value = 42 } }
+let addTodo item = 
+    let entry = Entity.Todo()
+    entry.Title <- item.title
+    entry.Description <- item.description
+    entry.Priority <- Nullable item.priority 
+    entry.Due <- Option.toNullable item.due
+
+    let f (ctx : Entity.ToodelooContext) = 
+        ctx.Add entry |> ignore
+        ctx.SaveChanges () |> ignore
+        entry
+    DbContext.withDb f
+
+let asTodo (t : Entity.Todo) = 
+    {
+        title = t.Title
+        description = t.Description
+        priority = t.Priority.Value
+        due = Option.ofNullable t.Due
+    }
+
+let getTodos () = 
+    let f (ctx : Entity.ToodelooContext) = 
+        query {
+            for t in ctx.Todo do
+                select t
+        } |> Seq.map asTodo
+    DbContext.withDb f
+
 let webApp =
-    route "/api/init" >=>
-        fun next ctx ->
+    choose [
+        route "/api/save" >=> fun next ctx ->
             task {
-                let! counter = getInitCounter()
-                return! Successful.OK counter next ctx
+                let! todo = ctx.BindJsonAsync<Todo>()
+                match addTodo todo with
+                | Ok t ->
+                    printfn "%A" t
+                    return! json (asTodo t) next ctx
+                | Error e ->
+                    ctx.SetStatusCode 500
+                    return! json e next ctx
             }
+        route "/api/load" >=> fun next ctx ->
+            task {
+                match getTodos () with
+                | Ok t -> 
+                    printfn "%A" t
+                    return! json t next ctx
+                | Error e ->
+                    ctx.SetStatusCode 500
+                    return! json e next ctx
+            }
+    ]
 
 let configureApp (app : IApplicationBuilder) =
     app.UseDefaultFiles()

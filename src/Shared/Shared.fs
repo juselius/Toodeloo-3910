@@ -1,4 +1,10 @@
 namespace Shared
 
-type Counter = { Value : int }
+open System
 
+type Todo = { 
+    title       : string
+    description : string 
+    priority    : int
+    due         : DateTime option
+    }
