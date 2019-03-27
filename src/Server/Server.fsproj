@@ -8,6 +8,7 @@
         <Compile Include="..\Shared\Shared.fs" />
         <Compile Include="Settings.fs" />
         <Compile Include="DbContext.fs" />
+        <Compile Include="API.fs" />
         <Compile Include="Server.fs" />
     </ItemGroup>
     <ItemGroup>
