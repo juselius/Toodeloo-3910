@@ -8,6 +8,7 @@ group Server
     nuget Microsoft.AspNetCore
     nuget Microsoft.AspNetCore.StaticFiles
     nuget Thoth.Json.Giraffe
+    nuget Microsoft.Extensions.Configuration
 
 group Client
     source https://api.nuget.org/v3/index.json

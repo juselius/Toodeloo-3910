@@ -1,6 +1,7 @@
 .fable/
 .fake/
 .vs/
+.ionide/
 obj/
 bin/
 packages/
