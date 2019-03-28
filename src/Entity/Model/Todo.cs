@@ -9,6 +9,8 @@ namespace Toodeloo.Entity
     public partial class Todo
     {
         [Column("id")]
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         [Column("title")]
         [StringLength(200)]
