@@ -8,11 +8,12 @@ open Shared
 
 let addTodo item = 
     let entry = Entity.Todo()
+    let rnd = System.Random()
+    entry.Id <- rnd.Next () //fix
     entry.Title <- item.title
     entry.Description <- item.description
     entry.Priority <- Nullable item.priority 
     entry.Due <- Option.toNullable item.due
-
     let f (ctx : Entity.ToodelooContext) = 
         ctx.Add entry |> ignore
         ctx.SaveChanges () |> ignore

@@ -7,7 +7,9 @@ let inline internal withDb qry =
         let ctx = new Entity.ToodelooContext (Settings.connString)
         qry ctx |> Ok
     with
-    | e -> Error (string e)
+    | e -> 
+        printfn "withDb: Exception: %s" e.Message
+        Error (string e)
 
 let tryMigrate () =
     printf "Running database migrations... "
