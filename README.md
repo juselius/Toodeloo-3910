@@ -1,6 +1,8 @@
-# SAFE Template
+# Toodeloo-3910
 
-This template can be used to generate a full-stack web application using the [SAFE Stack](https://safe-stack.github.io/). It was created using the dotnet [SAFE Template](https://safe-stack.github.io/docs/template-overview/). If you want to learn more about the template why not start with the [quick start](https://safe-stack.github.io/docs/quickstart/) guide?
+[![Linux Build](https://travis-ci.org/juselius/Toodeloo-3910.svg?branch=master)](https://travis-ci.org/juselius/Toodeloo-3910)
+
+This is a sample Todo app written in F\# for the course INF-3910-5 at UiT.
 
 ## Install pre-requisites
 
