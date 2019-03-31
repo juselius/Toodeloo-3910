@@ -30,7 +30,8 @@ let update (msg : Msg) (model : Model) : Model * Cmd<Msg> =
     | ToggleInfoPane -> 
         { model with showInfoPane = not model.showInfoPane }, Cmd.none
     | EntrySaved _ -> model, Cmd.none // fix
-    | EntriesLoaded entries -> initEntries model entries
+    | EntriesLoadedOk entries -> initEntries model (entries |> Ok)
+    | EntriesLoadedErr entries -> initEntries model (entries |> Error)
 
 let view model dispatch =
     mainView model dispatch [

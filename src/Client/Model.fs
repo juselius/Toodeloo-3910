@@ -19,13 +19,6 @@ type Model = {
 
 // local submodule
 module Defaults =
-    let defaultTodo = { 
-        title = ""
-        description = ""
-        priority = 0
-        due = None
-        }
-
     let defaultModel = {
         entries = Map.empty
         createForm = defaultTodo
@@ -59,19 +52,21 @@ type Msg =
 | ClearError
 | ToggleInfoPane
 | EntrySaved of Result<Todo, Exception>
-| EntriesLoaded of Result<Todo array, Exception>
+| EntriesLoadedOk of (int * Todo) array
+| EntriesLoadedErr of Exception
 
 let private notifyErr e = Cmd.ofMsg (Msg.NotifyError e)
 
 let private notifyExn (e : Exception) = Cmd.ofMsg (Msg.NotifyError e.Message)
 
-let initEntries model =
-    function 
+let initEntries model (todos : Result<(int * Todo) array, Exception>) =
+    match todos with 
     | Ok e ->
+        let e' = e |> Array.map snd
         let n = Array.length e
         { model with 
             currentId = n
-            entries = Map.ofArray (Array.zip [| 1 .. n |] e)
+            entries = Map.ofArray (Array.zip [| 1 .. n |] e')
         }, Cmd.none
     | Error ex -> 
         model, notifyExn ex 
@@ -87,31 +82,31 @@ let handleNewEntry (msg : NewEntryMsg) (model : Model) =
 
 let loadEntries (model : Model) =
     let p () =
+        let requestPath = "/api/load" 
         promise {
-            let requestPath = "/api/load" 
-            return! fetchAs<Todo array> requestPath (Decode.Auto.generateDecoder<Todo array>()) []
+            return! fetchAs<(int * Todo) array> requestPath (Decode.Auto.generateDecoder<(int * Todo) array>()) []
         }
-    model, Cmd.ofPromise p () (Ok >> EntriesLoaded) (Error >> EntriesLoaded)
+    // model, Cmd.ofPromise p () (Ok >> EntriesLoaded) (Error >> EntriesLoaded)
+    model, Cmd.ofPromise p () EntriesLoadedOk  EntriesLoadedErr
 
 let saveEntry (x : Todo) (model : Model) =
     let p () =
+        let bdy = Encode.Auto.toString (4, x)
+        let props = [
+            RequestProperties.Method HttpMethod.POST
+            RequestProperties.Body !^bdy
+        ]
+        let requestPath = "/api/save" 
         promise {
-            let bdy = Encode.Auto.toString (4, x)
-            let props = [
-                RequestProperties.Method HttpMethod.POST
-                RequestProperties.Body !^bdy
-            ]
-            let requestPath = "/api/save" 
             return! fetchAs<Todo> requestPath (Decode.Auto.generateDecoder<Todo>()) props
         }
-
     let newId = model.currentId + 1
     let todo' = model.entries |> Map.add newId x 
     let model' = { 
         model with 
             entries = todo' 
             currentId = newId
-            createForm = Defaults.defaultTodo
+            createForm = defaultTodo
         }
     model', Cmd.ofPromise p () (Ok >> EntrySaved) (Error >> EntrySaved)
 
