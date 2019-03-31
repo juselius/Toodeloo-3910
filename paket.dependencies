@@ -35,6 +35,21 @@ group Entity
     nuget Microsoft.EntityFrameworkCore.SqlServer
     nuget Npgsql.EntityFrameworkCore.PostgreSQL
 
+group Tests
+    storage none
+    source https://www.nuget.org/api/v2
+    framework netcoreapp2.2
+
+    nuget FSharp.Core
+    nuget Expecto
+    nuget Expecto.BenchmarkDotNet
+    nuget Expecto.FsCheck
+    nuget Expecto.Hopac
+    nuget Microsoft.NET.Test.Sdk
+    nuget YoloDev.Expecto.TestSdk
+    nuget canopy
+    nuget Selenium.WebDriver.ChromeDriver
+
 group Build
     source https://api.nuget.org/v3/index.json
     framework: netstandard2.0
