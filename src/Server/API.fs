@@ -6,10 +6,10 @@ open FSharp.Control.Tasks.V2
 open Giraffe
 open Shared
 
+let mutable private db = Map.ofList [(1, defaultTodo); (2, defaultTodo)]
+
 let addTodo item = 
     let entry = Entity.Todo()
-    let rnd = System.Random()
-    entry.Id <- rnd.Next () //fix
     entry.Title <- item.title
     entry.Description <- item.description
     entry.Priority <- Nullable item.priority 

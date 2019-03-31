@@ -1,4 +1,4 @@
-namespace Shared
+module Shared
 
 open System
 
@@ -8,3 +8,11 @@ type Todo = {
     priority    : int
     due         : DateTime option
     }
+
+let defaultTodo = { 
+    title = ""
+    description = ""
+    priority = 0
+    due = None
+    }
+

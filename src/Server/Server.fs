@@ -8,11 +8,8 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
 
-open FSharp.Control.Tasks.V2
 open Giraffe
-open Shared
-open System
-open Microsoft.EntityFrameworkCore
+open FSharp.Control.Tasks.V2
 
 let tryGetEnv = 
     System.Environment.GetEnvironmentVariable 
@@ -25,6 +22,15 @@ let port =
     |> tryGetEnv 
     |> Option.map uint16 
     |> Option.defaultValue 8085us
+
+open Shared
+
+let defaultTodo = { 
+        title = "Default"
+        description = ""
+        priority = 0
+        due = None
+        }
 
 let configureApp (app : IApplicationBuilder) =
     app.UseDefaultFiles()
