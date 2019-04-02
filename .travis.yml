@@ -2,24 +2,27 @@ language: csharp
 dist: xenial
 sudo: false
 dotnet: 2.2.105
+os: linux
+mono: 5.16.0
 
-matrix:
-  fast_finish: true
-
-  include:
-    - os: linux
-      mono: 5.16.0
+stages:
+  - build
+  - test
 
 env:
   global:
     - DOTNET_CLI_TELEMETRY_OPTOUT: 1
     - DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
-before_install:
-  - mono .paket/paket.exe restore
-  - yarn install
-  - dotnet restore build.proj
-
-script:
-- dotnet fake build
-- cd Tests; dotnet run
+jobs:
+  include:
+    - stage: build
+      before_script:
+        - mono .paket/paket.exe restore
+        - yarn install
+        - dotnet restore build.proj
+      script:
+        - dotnet fake build
+    - stage: test
+      script:
+        - cd Tests; dotnet run
