@@ -1,43 +1,32 @@
-namespace Toodleloo
+namespace Toodleloo.Tests
+open OpenQA.Selenium.Chrome
+open canopy.types
 
-open canopy.runner.classic
-open canopy.configuration
-open canopy.classic
+module UITests =
+    open canopy.runner.classic
+    open canopy.configuration
+    open canopy.classic
+    open Expecto
 
-//start an instance of chrome
-// start chrome
+    // [<Tests>]
+    let testClient () =
+        let homeDir = System.Environment.GetEnvironmentVariable "HOME"
+        chromeDir <- homeDir + "/.local/bin"
 
-//this is how you define a test
-// "taking canopy for a spin" &&& fun _ ->
-//     //this is an F# function body, it's whitespace enforced
+        start BrowserStartMode.Chrome //Headless
 
-//     //go to url
-//     url "http://lefthandedgoat.github.io/canopy/testpages/"
+        //this is how you define a test
+        "taking canopy for a spin" &&& fun _ ->
+            url "http://localhost:8080"
 
-//     //assert that the element with an id of 'welcome' has
-//     //the text 'Welcome'
-//     "#welcome" == "Welcome"
+            "#title" == ""
+            "#title" << "Canopy test"
+            "#desc" << "Added by Canopy"
+            click "#save"
+            "#title_view" == "Canopy test"
+        run ()
 
-//     //assert that the element with an id of 'firstName' has the value 'John'
-//     "#firstName" == "John"
+        printfn "press [enter] to exit the browser"
+        System.Console.ReadLine () |> ignore
 
-//     //change the value of element with
-//     //an id of 'firstName' to 'Something Else'
-//     "#firstName" << "Something Else"
-
-//     //verify another element's value, click a button,
-//     //verify the element is updated
-//     "#button_clicked" == "button not clicked"
-//     click "#button"
-//     "#button_clicked" == "button clicked"
-
-// //run all tests
-// run()
-
-// printfn "press [enter] to exit"
-// System.Console.ReadLine() |> ignore
-
-// quit()
-
-
-
+        quit ()

@@ -1,6 +1,10 @@
-﻿module Toodeloo.Tests
-open Expecto
+﻿namespace Toodeloo.Tests
+open Toodleloo.Tests
 
-[<EntryPoint>]
-let main argv =
-    Tests.runTestsInAssembly defaultConfig argv
+module Main =
+    open Expecto
+
+    [<EntryPoint>]
+    let main argv =
+        UITests.testClient ()
+        Tests.runTestsInAssembly defaultConfig argv
