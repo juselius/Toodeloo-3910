@@ -6,7 +6,7 @@ os: linux
 
 stages:
   - build
-  - test
+  # - test
 
 services:
   - postgresql
@@ -26,10 +26,12 @@ jobs:
         - dotnet restore build.proj
       script:
         - dotnet fake build
-    - stage: test
-      script:
         - cd src/Server; dotnet run &
-        - cd ../..; sleep 20
-        - cd Tests; dotnet run
-        - kill %1
-        - echo "done"
+        - sleep 30; kill %1
+    # - stage: test
+    #   script:
+    #     - cd src/Server; dotnet run &
+    #     - cd ../..; sleep 20
+    #     - cd Tests; dotnet run
+    #     - kill %1
+    #     - echo "done"
