@@ -7,8 +7,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Canopy.fs" />
-    <Compile Include="Sample.fs" />
+    <Compile Include="FsCheck.fs" />
+    <Compile Include="Unit.fs" />
     <Compile Include="Main.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\src\Server\Server.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

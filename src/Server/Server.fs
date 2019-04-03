@@ -2,7 +2,6 @@ module Toodeloo.Server
 
 open System
 open System.IO
-
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting

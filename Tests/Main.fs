@@ -8,3 +8,4 @@ module Main =
     let main argv =
         UITests.testClient ()
         Tests.runTestsInAssembly defaultConfig argv
+

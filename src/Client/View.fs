@@ -9,6 +9,7 @@ open Shared
 
 let private button txt onClick =
     Button.button [
+        Button.Props [ Id "save" ]
         Button.IsFullWidth
         Button.Color IsPrimary
         Button.OnClick onClick
@@ -19,6 +20,7 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
     p [] [
         Field.div [] [ Label.label [] [ str "Title" ] ]
         Control.div [] [ Input.text [
+          Input.Props [ Id "title" ]
           Input.OnChange (fun e -> dispatch' (UpdateTitle e.Value))
           Input.Placeholder "Title" 
           Input.Value model.createForm.title
@@ -26,6 +28,7 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
         ]
         Field.div [] [ Label.label [] [ str "Description" ] ]
         Control.div [] [ Input.text [
+          Input.Props [ Id "desc" ]
           Input.OnChange (fun e -> dispatch' (UpdateDescription e.Value))
           Input.Placeholder "" 
           Input.Value model.createForm.description
@@ -83,6 +86,16 @@ let taskListView (model : Model) (dispatch : Msg -> unit) =
         | Some (id, n) when id = curId -> td [] editor
         | _ -> clickToEdit curId txt dispatch
     let tit curId t = 
+        // temporary hack for canopy demo
+        let clickToEdit id txt (dispatch : Msg -> unit) = 
+            td [
+                Id "title_view"
+                OnDoubleClick (fun _ -> dispatch <| StartEdit id)
+            ] [ str txt ]
+        let editable curId txt editor =
+            match model.editForm with
+            | Some (id, n) when id = curId -> td [] editor
+            | _ -> clickToEdit curId txt dispatch
         editable curId t.title [ Input.text [ 
             Input.DefaultValue t.title
             Input.OnChange (fun e -> 

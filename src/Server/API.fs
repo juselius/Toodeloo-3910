@@ -41,19 +41,17 @@ let saveEntry next (ctx : Http.HttpContext) =
         let! todo = ctx.BindJsonAsync<Todo>()
         match addTodo todo with
         | Ok t ->
-            printfn "%A" t
             return! json (asTodo t) next ctx
         | Error e ->
             ctx.SetStatusCode 500
             return! json e next ctx
     }
-
+    
 
 let loadEntries next ctx =
     task {
         match getTodos () with
         | Ok t -> 
-            printfn "%A" t
             return! json t next ctx
         | Error e ->
             ctx.SetStatusCode 500

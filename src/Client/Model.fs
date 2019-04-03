@@ -84,10 +84,12 @@ let loadEntries (model : Model) =
     let p () =
         let requestPath = "/api/load" 
         promise {
-            return! fetchAs<(int * Todo) array> requestPath (Decode.Auto.generateDecoder<(int * Todo) array>()) []
+            let! t = fetchAs<Todo array> requestPath (Decode.Auto.generateDecoder<Todo array>()) []
+            let n = Array.length t
+            return Array.zip [|1 .. n |] t
         }
-    // model, Cmd.ofPromise p () (Ok >> EntriesLoaded) (Error >> EntriesLoaded)
     model, Cmd.ofPromise p () EntriesLoadedOk  EntriesLoadedErr
+    // model, Cmd.ofPromise p () (Ok >> EntriesLoaded) (Error >> EntriesLoaded)
 
 let saveEntry (x : Todo) (model : Model) =
     let p () =
