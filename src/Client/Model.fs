@@ -13,7 +13,6 @@ type Model = {
     createForm : Todo
     editForm   : (int * Todo) option
     errorMsg   : string option
-    currentId  : int
     showInfoPane : bool
     }
 
@@ -24,7 +23,6 @@ module Defaults =
         createForm = defaultTodo
         errorMsg = None
         editForm = None
-        currentId = 0
         showInfoPane = false
         }
 
@@ -51,9 +49,10 @@ type Msg =
 | NotifyError of string
 | ClearError
 | ToggleInfoPane
-| EntrySaved of Result<Todo, Exception>
+| EntrySaved of Result<int * Todo, Exception>
 | EntriesLoadedOk of (int * Todo) array
 | EntriesLoadedErr of Exception
+| Ignore 
 
 let private notifyErr e = Cmd.ofMsg (Msg.NotifyError e)
 
@@ -62,11 +61,8 @@ let private notifyExn (e : Exception) = Cmd.ofMsg (Msg.NotifyError e.Message)
 let initEntries model (todos : Result<(int * Todo) array, Exception>) =
     match todos with 
     | Ok e ->
-        let e' = e |> Array.map snd
-        let n = Array.length e
         { model with 
-            currentId = n
-            entries = Map.ofArray (Array.zip [| 1 .. n |] e')
+            entries = Map.ofArray e
         }, Cmd.none
     | Error ex -> 
         model, notifyExn ex 
@@ -83,13 +79,11 @@ let handleNewEntry (msg : NewEntryMsg) (model : Model) =
 let loadEntries (model : Model) =
     let p () =
         let requestPath = "/api/load" 
+        let decoder = Decode.Auto.generateDecoder<(int * Todo) array>()
         promise {
-            let! t = fetchAs<Todo array> requestPath (Decode.Auto.generateDecoder<Todo array>()) []
-            let n = Array.length t
-            return Array.zip [|1 .. n |] t
+            return! fetchAs<(int * Todo) array> requestPath decoder []
         }
     model, Cmd.ofPromise p () EntriesLoadedOk  EntriesLoadedErr
-    // model, Cmd.ofPromise p () (Ok >> EntriesLoaded) (Error >> EntriesLoaded)
 
 let saveEntry (x : Todo) (model : Model) =
     let p () =
@@ -99,22 +93,32 @@ let saveEntry (x : Todo) (model : Model) =
             RequestProperties.Body !^bdy
         ]
         let requestPath = "/api/save" 
+        let decoder = Decode.Auto.generateDecoder<int * Todo>()
         promise {
-            return! fetchAs<Todo> requestPath (Decode.Auto.generateDecoder<Todo>()) props
+            return! fetchAs<int * Todo> requestPath decoder props
         }
-    let newId = model.currentId + 1
-    let todo' = model.entries |> Map.add newId x 
-    let model' = { 
-        model with 
-            entries = todo' 
-            currentId = newId
-            createForm = defaultTodo
-        }
-    model', Cmd.ofPromise p () (Ok >> EntrySaved) (Error >> EntrySaved)
+    model, Cmd.ofPromise p () (Ok >> EntrySaved) (Error >> EntrySaved)
+
+let entrySaved (e : Result<int * Todo, System.Exception>) model =
+        match e with
+        | Ok (id, entry) ->
+            let todo' = model.entries |> Map.add id entry 
+            let model' = { 
+                model with 
+                    entries = todo' 
+                    createForm = Shared.defaultTodo
+                }
+            model', Cmd.none 
+        | Error err -> model, Cmd.ofMsg (NotifyError err.Message)        
 
 let deleteEntry (x : int) (model : Model) =
     let model' = { model with entries = Map.remove x model.entries }
-    model', Cmd.none
+    let requestPath = sprintf "/api/delete/%i" x
+    let decoder = Decode.Auto.generateDecoder<int option>()
+    let p () = promise {
+            return! fetchAs<int option> requestPath decoder []
+        }
+    model', Cmd.ofPromise p () (fun _ -> Ignore) (string >> NotifyError)
 
 let private updateEntry (msg : EditEntryMsg) (entry : Todo) =
     match msg with
@@ -136,18 +140,28 @@ let handleEditEntry (msg : UpdateEntryMsg) (model : Model) =
         let entry' = updateEntry msg entry
         let model' = { model with editForm = Some (id, entry') }
         model', Cmd.none
-    | None -> model, notifyErr "Error in error message"
+    | None -> model, notifyErr "Error in entry editor"
 
 let saveEdit model =
     match model.editForm with
     | Some (id, entry) -> 
+        let requestPath = sprintf "/api/update/%i" id
+        let decoder = Decode.Auto.generateDecoder<int option>()
+        let bdy = Encode.Auto.toString (4, entry)
+        let props = [
+            RequestProperties.Method HttpMethod.POST
+            RequestProperties.Body !^bdy
+        ]
+        let p () = promise {
+                return! fetchAs<int option> requestPath decoder props
+            }
         let model' = {
             model with 
                 entries = Map.add id entry model.entries
                 editForm = None 
             }
-        model', Cmd.none
-    | None -> model, notifyErr "Error in error message"
+        model', Cmd.ofPromise p () (fun _ -> Ignore) (string >> NotifyError)
+    | None -> model, notifyErr "Error saving edited entry"
 
 let cancelEdit model =
     let model' = { model with editForm = None }

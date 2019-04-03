@@ -29,9 +29,10 @@ let update (msg : Msg) (model : Model) : Model * Cmd<Msg> =
     | ClearError -> { model with errorMsg = None }, Cmd.none
     | ToggleInfoPane -> 
         { model with showInfoPane = not model.showInfoPane }, Cmd.none
-    | EntrySaved _ -> model, Cmd.none // fix
+    | EntrySaved e -> entrySaved e model
     | EntriesLoadedOk entries -> initEntries model (entries |> Ok)
     | EntriesLoadedErr entries -> initEntries model (entries |> Error)
+    | Ignore -> model, Cmd.none
 
 let view model dispatch =
     mainView model dispatch [

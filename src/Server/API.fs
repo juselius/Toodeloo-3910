@@ -7,32 +7,44 @@ open Giraffe
 open Shared
 open DbContext
 
-// let mutable private db = Map.ofList [(1, defaultTodo); (2, defaultTodo)]
-
 let saveEntry next (ctx : Http.HttpContext) =
     task {
         let! todo = ctx.BindJsonAsync<Todo>()
         match addTodo todo with
-        | Ok t ->
-            return! json (asTodo t) next ctx
+        | Ok t -> return! json (t.Id, asTodo t) next ctx
         | Error e ->
             ctx.SetStatusCode 500
             return! json e next ctx
     }
     
+let loadEntries () =
+    match getTodos () with
+    | Ok t -> json t
+    | Error e -> json e >=> setStatusCode 500
 
-let loadEntries next ctx =
-    task {
-        match getTodos () with
-        | Ok t -> 
-            return! json t next ctx
-        | Error e ->
-            ctx.SetStatusCode 500
-            return! json e next ctx
-    }
+let loadEntry id =
+    match getTodo id with
+    | Ok t ->  json t 
+    | Error e -> json e >=> setStatusCode 500
+
+let deleteEntry id =
+    match delTodo id with
+    | Ok t -> json t 
+    | Error e -> json e >=> setStatusCode 500
+
+let updateEntry id =
+    bindJson<Todo> (fun t -> 
+        printfn "%i %A" id t 
+        match updateTodo id t with
+        | Ok r -> json r
+        | Error e -> json e >=> setStatusCode 500
+    ) 
 
 let webApp : HttpFunc -> Http.HttpContext -> HttpFuncResult =
     choose [
-        route "/api/save" >=> saveEntry 
-        route "/api/load" >=> loadEntries
+        route "/api/save" >=> warbler (fun _ -> saveEntry)
+        route "/api/load" >=> warbler (fun _ -> loadEntries ())
+        routef "/api/load/%i" loadEntry 
+        routef "/api/delete/%i" deleteEntry 
+        routef "/api/update/%i" updateEntry 
     ]

@@ -44,7 +44,7 @@ let getTodos () =
         query {
             for t in ctx.Todo do
                 select t
-        } |> Seq.map asTodo
+        } |> Seq.map (fun t -> t.Id, asTodo t)
     withDb f
 
 
@@ -64,8 +64,15 @@ let delTodo id =
         |> Option.map (ctx.Remove >> ignore >> ctx.SaveChanges)
     )
 
-let updateTodo id = 
+let updateTodo id (todo : Shared.Todo) = 
     withDb (fun ctx -> 
         getItemById id ctx 
-        |> Option.map (ctx.Update >> ignore >> ctx.SaveChanges)
+        |> Option.map (fun item ->
+            item.Title <- todo.title
+            item.Description <- todo.description
+            item.Priority <- Nullable todo.priority
+            item.Due <- Option.toNullable todo.due
+            ctx.Update item |> ignore 
+            ctx.SaveChanges ()
+        )
     )
