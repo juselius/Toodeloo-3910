@@ -34,7 +34,6 @@ let deleteEntry id =
 
 let updateEntry id =
     bindJson<Todo> (fun t -> 
-        printfn "%i %A" id t 
         match updateTodo id t with
         | Ok r -> json r
         | Error e -> json e >=> setStatusCode 500
