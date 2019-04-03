@@ -3,11 +3,13 @@ dist: xenial
 sudo: false
 dotnet: 2.2.105
 os: linux
-mono: 5.16.0
 
 stages:
   - build
   - test
+
+services:
+  - postgresql
 
 env:
   global:
@@ -17,6 +19,7 @@ env:
 jobs:
   include:
     - stage: build
+      mono: 5.16.0
       before_script:
         - mono .paket/paket.exe restore
         - yarn install
