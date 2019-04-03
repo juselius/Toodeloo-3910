@@ -17,7 +17,13 @@ let private button txt onClick =
 
 let newEntryForm (model : Model) (dispatch : Msg -> unit) =
     let dispatch' = NewEntry >> dispatch
-    p [] [
+    p [
+        OnKeyPress (fun k -> 
+            if k.key = "Enter" then 
+                dispatch (SaveEntry model.createForm) 
+            else ()
+        )
+    ] [
         Field.div [] [ Label.label [] [ str "Title" ] ]
         Control.div [] [ Input.text [
           Input.Props [ Id "title" ]
