@@ -19,8 +19,8 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
     let dispatch' = NewEntry >> dispatch
     p [
         OnKeyPress (fun k -> 
-            if k.key = "Enter" then 
-                dispatch (SaveEntry model.createForm) 
+            if k.key = "Enter" && model.createForm.IsSome then 
+                dispatch (SaveEntry model.createForm.Value)
             else ()
         )
     ] [
@@ -29,6 +29,7 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
           Input.Props [ Id "title" ]
           Input.OnChange (fun e -> dispatch' (UpdateTitle e.Value))
           Input.Placeholder "Title" 
+          (if model.createForm.IsNone then Input.Value "" else Input.Props [])
           ] 
         ]
         Field.div [] [ Label.label [] [ str "Description" ] ]
@@ -36,6 +37,7 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
           Input.Props [ Id "desc" ]
           Input.OnChange (fun e -> dispatch' (UpdateDescription e.Value))
           Input.Placeholder "" 
+          (if model.createForm.IsNone then Input.Value "" else Input.Props [])
           ] 
         ]
         Field.div [] [ Label.label [] [ str "Priority" ] ]
@@ -50,15 +52,20 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
                 Input.OnChange (fun e -> 
                     dispatch' (UpdateDue (Some (DateTime.Parse e.Value))))
                 Input.Value (
-                    match model.createForm.due with
-                    | Some x -> x.ToString "yyyy-MM-dd" 
-                    | None ->  ""
+                    if model.createForm.IsSome then
+                        match model.createForm.Value.due with
+                        | Some x -> x.ToString "yyyy-MM-dd" 
+                        | None ->  ""
+                    else ""
                 ) 
             ] 
         ]
         Field.div [] [ Label.label [] [ str "" ] ]
         Control.div [] [ button "Add entry" (fun _ -> 
-            dispatch (SaveEntry model.createForm)) ]
+            if model.createForm.IsSome then            
+                dispatch (SaveEntry model.createForm.Value)
+            else ()
+        ) ]
     ]
 
 // Add a double click event to each editable td

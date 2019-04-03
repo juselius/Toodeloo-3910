@@ -10,7 +10,7 @@ open Shared
 
 type Model = { 
     entries    : Map<int, Todo>
-    createForm : Todo
+    createForm : Todo option
     editForm   : (int * Todo) option
     errorMsg   : string option
     showInfoPane : bool
@@ -20,7 +20,7 @@ type Model = {
 module Defaults =
     let defaultModel = {
         entries = Map.empty
-        createForm = defaultTodo
+        createForm = None
         errorMsg = None
         editForm = None
         showInfoPane = false
@@ -68,13 +68,22 @@ let initEntries model (todos : Result<(int * Todo) array, Exception>) =
         model, notifyExn ex 
 
 let handleNewEntry (msg : NewEntryMsg) (model : Model) =
+    let form = 
+        match model.createForm with
+        | Some f -> f
+        | None -> { 
+            title = ""
+            description = ""
+            priority = 1
+            due = None
+            }
     let entry = 
         match msg with
-        | UpdatePri y -> { model.createForm with priority = y }
-        | UpdateDue y ->  { model.createForm with due = y }
-        | UpdateTitle y -> { model.createForm with title = y }
-        | UpdateDescription y -> { model.createForm with description = y }
-    { model with createForm = entry }, Cmd.none
+        | UpdatePri y -> { form with priority = y }
+        | UpdateDue y ->  { form with due = y }
+        | UpdateTitle y -> { form with title = y }
+        | UpdateDescription y -> { form with description = y }
+    { model with createForm = Some entry }, Cmd.none
 
 let loadEntries (model : Model) =
     let p () =
@@ -106,7 +115,7 @@ let entrySaved (e : Result<int * Todo, System.Exception>) model =
             let model' = { 
                 model with 
                     entries = todo' 
-                    createForm = Shared.defaultTodo
+                    createForm = None
                 }
             model', Cmd.none 
         | Error err -> model, Cmd.ofMsg (NotifyError err.Message)        
