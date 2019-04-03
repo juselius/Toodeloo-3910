@@ -23,7 +23,6 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
           Input.Props [ Id "title" ]
           Input.OnChange (fun e -> dispatch' (UpdateTitle e.Value))
           Input.Placeholder "Title" 
-          Input.Value model.createForm.title
           ] 
         ]
         Field.div [] [ Label.label [] [ str "Description" ] ]
@@ -31,14 +30,12 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
           Input.Props [ Id "desc" ]
           Input.OnChange (fun e -> dispatch' (UpdateDescription e.Value))
           Input.Placeholder "" 
-          Input.Value model.createForm.description
           ] 
         ]
         Field.div [] [ Label.label [] [ str "Priority" ] ]
         Control.div [] [ Input.number [
           Input.OnChange (fun e -> dispatch' (UpdatePri (int e.Value)))
           Input.Placeholder "1" 
-          Input.Value (string model.createForm.priority)
           ] 
         ]
         Field.div [] [ Label.label [] [ str "Due" ] ]
@@ -60,10 +57,10 @@ let newEntryForm (model : Model) (dispatch : Msg -> unit) =
 
 // Add a double click event to each editable td
 // It would be better to make the whole row double clickable
-let clickToEdit id txt (dispatch : Msg -> unit) = 
-    td [
-        OnDoubleClick (fun _ -> dispatch <| StartEdit id)
-    ] [ str txt ]
+let clickToEdit id txt attrs (dispatch : Msg -> unit) = 
+    td 
+        ([ OnDoubleClick (fun _ -> dispatch <| StartEdit id) ] @ attrs) 
+        [ str txt ]
 
 let styleIt (t : Todo) = 
     let d = 
@@ -79,30 +76,19 @@ let styleIt (t : Todo) =
         | _ -> ""
     Style [ BackgroundColor c ] 
 
-
 let taskListView (model : Model) (dispatch : Msg -> unit) =
-    let editable curId txt editor =
+    let editable curId txt attrs editor =
         match model.editForm with
         | Some (id, n) when id = curId -> td [] editor
-        | _ -> clickToEdit curId txt dispatch
+        | _ -> clickToEdit curId txt attrs dispatch
     let tit curId t = 
-        // temporary hack for canopy demo
-        let clickToEdit id txt (dispatch : Msg -> unit) = 
-            td [
-                Id "title_view"
-                OnDoubleClick (fun _ -> dispatch <| StartEdit id)
-            ] [ str txt ]
-        let editable curId txt editor =
-            match model.editForm with
-            | Some (id, n) when id = curId -> td [] editor
-            | _ -> clickToEdit curId txt dispatch
-        editable curId t.title [ Input.text [ 
+        editable curId t.title [ Id "title_view"] [ Input.text [ 
             Input.DefaultValue t.title
             Input.OnChange (fun e -> 
                 dispatch <| EditEntry (UpdateTitle e.Value))
         ]] 
     let desc curId t = 
-        editable curId t.description [ Input.text [ 
+        editable curId t.description [] [ Input.text [ 
             Input.DefaultValue t.description
             Input.OnChange (fun e -> 
                 dispatch <| EditEntry (UpdateDescription e.Value))
@@ -113,7 +99,7 @@ let taskListView (model : Model) (dispatch : Msg -> unit) =
             | Some (_, x) -> Option.defaultValue DateTime.Now x.due
             | None ->  Option.defaultValue DateTime.Now t.due
             |> fun x -> x.ToString "yyyy-MM-dd"
-        editable curId duedate [ Input.date [ 
+        editable curId duedate [] [ Input.date [ 
             duedate |> Input.Value
             Input.OnChange (fun e -> 
                 dispatch <| EditEntry (
@@ -121,7 +107,7 @@ let taskListView (model : Model) (dispatch : Msg -> unit) =
                 )
         ]] 
     let pri curId t = 
-        editable curId (string t.priority) [ Input.number [ 
+        editable curId (string t.priority) [] [ Input.number [ 
             Input.DefaultValue (string t.priority)
             Input.OnChange (fun e -> 
                 dispatch <| EditEntry (UpdatePri <| int e.Value))
