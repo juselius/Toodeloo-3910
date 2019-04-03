@@ -6,6 +6,6 @@ module Main =
 
     [<EntryPoint>]
     let main argv =
-        UITests.testClient ()
+        // UITests.testClient ()
         Tests.runTestsInAssembly defaultConfig argv
 
