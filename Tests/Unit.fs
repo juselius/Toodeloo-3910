@@ -1,12 +1,27 @@
 namespace Toodeloo.Tests
-open Shared
 
 module UnitTests =
-
-  open System
   open Expecto
   open Toodeloo.API
 
+  [<Tests>]
+  let serverTests =
+    testList "API tests" [
+      testCase "add todo" <| fun _ ->
+        let result = addTodo Shared.defaultTodo
+        Expect.isOk result "Add Ok"
+
+      testCase "load todos" <| fun _ ->
+        let result = getTodos ()
+        Expect.isOk result "Get Ok"
+        match result with 
+        | Ok x -> 
+          let n = Seq.length x 
+          Expect.isTrue (n > 0) "Todo list has n > 0 elements"
+        | Error _ -> Tests.failtest "This should not be possible!"
+    ]
+
+// examples 
   [<Tests>]
   let tests =
     testList "example success" [
@@ -23,7 +38,7 @@ module UnitTests =
 
     ]
 
-  // [<Tests>]
+  //[<Tests>]
   let failures =
     testList "example failure" [
       testCase "when true is not (should fail)" <| fun _ ->
@@ -43,21 +58,4 @@ module UnitTests =
       test "I am (should fail)" {
         "computation expression" |> Expect.equal true false
       }
-    ]
-
-  [<Tests>]
-  let serverTests =
-    testList "API tests" [
-      testCase "add todo" <| fun _ ->
-        let result = addTodo Shared.defaultTodo
-        Expect.isOk result "Add Ok"
-
-      testCase "load todos" <| fun _ ->
-        let result = getTodos ()
-        Expect.isOk result "Get Ok"
-        match result with 
-        | Ok x -> 
-          let n = Seq.length x 
-          Expect.isTrue (n > 0) "Todo list has n > 0 elements"
-        | Error _ -> Tests.failtest "This should not be possible!"
     ]
